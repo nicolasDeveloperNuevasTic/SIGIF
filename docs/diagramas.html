@@ -1,0 +1,435 @@
+<title>Diagramas SIGIF</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Plano técnico: encabezado tipo rótulo de plano, una lámina por diagrama */
+:root{--bg:#f3f5f6;--hoja:#ffffff;--tinta:#1d2a33;--suave:#5b6b76;--linea:#d3dbe0;--acento:#1b4f72;--sello:#d68910;
+--display:'IBM Plex Sans Condensed','Arial Narrow',sans-serif;--texto:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#11171b;--hoja:#182127;--tinta:#e3eaee;--suave:#97a8b3;--linea:#2c3a43;--acento:#7fb8de;--sello:#f0b04a;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#11171b;--hoja:#182127;--tinta:#e3eaee;--suave:#97a8b3;--linea:#2c3a43;--acento:#7fb8de;--sello:#f0b04a;color-scheme:dark}
+body{background:var(--bg);color:var(--tinta);font-family:var(--texto);line-height:1.5}
+.pagina{max-width:1200px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;border-bottom:2px solid var(--tinta);padding-bottom:12px}
+h1{font-family:var(--display);font-size:clamp(1.6rem,4vw,2.2rem);margin:0;text-wrap:balance;letter-spacing:.01em}
+.rotulo{font-family:var(--mono);font-size:.78rem;color:var(--suave);display:grid;grid-template-columns:auto auto;gap:2px 14px}
+.rotulo b{color:var(--tinta);font-weight:400}
+nav{display:flex;flex-wrap:wrap;gap:8px}
+nav a{font-family:var(--mono);font-size:.8rem;text-decoration:none;color:var(--acento);border:1px solid var(--linea);padding:4px 10px;border-radius:4px;background:var(--hoja)}
+nav a:hover,nav a:focus-visible{border-color:var(--acento);outline:none}
+section{display:flex;flex-direction:column;gap:10px;min-width:0}
+h2{font-family:var(--display);font-size:1.3rem;margin:0}
+.lamina{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--sello)}
+p{margin:0;max-width:72ch;color:var(--suave)}
+.hoja{background:var(--hoja);border:1px solid var(--linea);border-radius:6px;padding:16px;overflow-x:auto}
+.hoja pre.mermaid{margin:0;background:transparent;display:flex;justify-content:center;min-width:fit-content}
+code{font-family:var(--mono);font-size:.85em}
+</style>
+<div class="pagina">
+<header>
+ <div><div class="lamina">Sistema Integral de Gestión de Inventario, Compras y Ventas</div><h1>Diagramas SIGIF</h1></div>
+ <div class="rotulo"><span>Versión</span><b>1.0</b><span>Fecha</span><b>21/10/2026</b><span>Fuente</span><b>docs/*.md</b></div>
+</header>
+<nav aria-label="Diagramas"><a href="#bd">Base de datos</a><a href="#despliegue">Despliegue</a><a href="#capas">Capas del Back-End</a><a href="#offline">Venta offline</a></nav>
+<section id="bd"><div class="lamina">Lámina 1 · PostgreSQL 16</div><h2>Modelo entidad-relación</h2>
+<p>21 tablas creadas por Flyway (<code>V1__esquema_inicial.sql</code>). Cada producto es la combinación producto + marca + presentación con un único código de barras; las existencias se separan en disponible, reservada y dañada; todo cambio queda en <code>auditoria</code> por triggers.</p>
+<div class="hoja"><pre class="mermaid">erDiagram
+    CATEGORIA ||--o{ CATEGORIA : "subcategoria"
+    CATEGORIA ||--o{ PRODUCTO : "clasifica"
+    MARCA ||--o{ PRODUCTO : "fabrica"
+    PRESENTACION ||--o{ PRODUCTO : "empaca"
+    UNIDAD_MEDIDA ||--o{ PRODUCTO : "unidad base"
+    PRODUCTO ||--o{ CONVERSION_UNIDAD : "factores"
+    UNIDAD_MEDIDA ||--o{ CONVERSION_UNIDAD : "unidad alterna"
+    PRODUCTO ||--o{ HISTORIAL_PRECIO : "costos y precios"
+    PRODUCTO ||--|| INVENTARIO_SALDO : "existencias"
+    PRODUCTO ||--o{ LOTE : "vencimientos"
+    PRODUCTO ||--o{ MOVIMIENTO_INVENTARIO : "kardex"
+    TERCERO ||--o{ DOCUMENTO_INGRESO : "proveedor"
+    DOCUMENTO_INGRESO ||--|{ DETALLE_INGRESO : "lineas"
+    DOCUMENTO_INGRESO ||--o{ LOTE : "origina"
+    PRODUCTO ||--o{ DETALLE_INGRESO : "comprado"
+    LOTE ||--o{ DETALLE_INGRESO : "ingresa"
+    TERCERO ||--o{ FACTURA : "cliente"
+    FACTURA ||--|{ DETALLE_FACTURA : "lineas"
+    PRODUCTO ||--o{ DETALLE_FACTURA : "vendido"
+    TERCERO ||--o{ RESERVA : "cliente"
+    PRODUCTO ||--o{ RESERVA : "reservado"
+    RESERVA ||--o{ DETALLE_FACTURA : "consumida en"
+    DOCUMENTO_INGRESO ||--o{ MOVIMIENTO_INVENTARIO : "ENTRADA_COMPRA"
+    FACTURA ||--o{ MOVIMIENTO_INVENTARIO : "SALIDA_VENTA"
+    RESERVA ||--o{ MOVIMIENTO_INVENTARIO : "CAMBIO_ESTADO"
+    LOTE ||--o{ MOVIMIENTO_INVENTARIO : "lote afectado"
+    CIERRE_MENSUAL ||--|{ CIERRE_MENSUAL_DETALLE : "consolida"
+    PRODUCTO ||--o{ CIERRE_MENSUAL_DETALLE : "saldo del mes"
+    FACTURA ||--o| SINCRONIZACION_OPERACION : "venta offline"
+    USUARIO ||--o{ USUARIO_ROL : ""
+    ROL ||--o{ USUARIO_ROL : ""
+    ROL ||--o{ ROL_PERMISO : ""
+    PERMISO ||--o{ ROL_PERMISO : ""
+
+    CATEGORIA {
+        bigint id PK
+        varchar nombre "UK con padre"
+        varchar descripcion
+        bigint categoria_padre_id FK
+        boolean activo
+    }
+    MARCA {
+        bigint id PK
+        varchar nombre UK
+        boolean activo
+    }
+    PRESENTACION {
+        bigint id PK
+        varchar nombre UK
+        boolean activo
+    }
+    UNIDAD_MEDIDA {
+        bigint id PK
+        varchar codigo UK "UND, MT, KG..."
+        varchar nombre
+        boolean activo
+    }
+    PRODUCTO {
+        bigint id PK
+        varchar codigo_barras UK
+        varchar nombre
+        text descripcion
+        bigint categoria_id FK
+        bigint marca_id FK
+        bigint presentacion_id FK
+        bigint unidad_base_id FK
+        varchar estado "ACTIVO | INACTIVO"
+        boolean permite_fraccion
+        numeric precio_compra "costo promedio &gt; 0"
+        numeric porcentaje_incremento "&gt;= 0"
+        numeric precio_venta "compra x (1 + %/100)"
+        numeric porcentaje_iva
+        boolean tiene_garantia
+        int meses_garantia
+        boolean tiene_vencimiento
+        numeric stock_minimo
+        bigint version "bloqueo optimista"
+    }
+    CONVERSION_UNIDAD {
+        bigint id PK
+        bigint producto_id FK
+        bigint unidad_medida_id FK
+        numeric factor "unidades base"
+        boolean uso_compra
+        boolean uso_venta
+    }
+    HISTORIAL_PRECIO {
+        bigint id PK
+        bigint producto_id FK
+        numeric precio_compra_anterior
+        numeric precio_compra_nuevo
+        numeric porcentaje_anterior
+        numeric porcentaje_nuevo
+        numeric precio_venta_anterior
+        numeric precio_venta_nuevo
+        varchar motivo "CREACION | COMPRA | ..."
+        varchar referencia
+        varchar usuario
+        timestamptz fecha
+    }
+    INVENTARIO_SALDO {
+        bigint producto_id PK, FK
+        numeric cantidad_disponible "CHECK &gt;= 0"
+        numeric cantidad_reservada "CHECK &gt;= 0"
+        numeric cantidad_danada "CHECK &gt;= 0"
+        bigint version
+    }
+    LOTE {
+        bigint id PK
+        bigint producto_id FK
+        varchar codigo_lote "UK con producto"
+        date fecha_vencimiento
+        numeric cantidad_inicial
+        numeric cantidad_actual "CHECK &gt;= 0"
+        bigint documento_ingreso_id FK
+    }
+    TERCERO {
+        bigint id PK
+        varchar tipo_persona "NATURAL | JURIDICA"
+        varchar tipo_documento "CC | CE | NIT | PAS"
+        varchar numero_documento UK
+        varchar digito_verificacion
+        varchar nombre
+        varchar apellido
+        varchar razon_social
+        varchar direccion
+        varchar telefono
+        varchar correo
+        boolean es_cliente
+        boolean es_proveedor
+        boolean es_generico
+        boolean activo
+    }
+    DOCUMENTO_INGRESO {
+        bigint id PK
+        varchar numero UK "DI-00000001"
+        bigint proveedor_id FK
+        timestamptz fecha
+        int periodo "AAAAMM"
+        varchar numero_factura_proveedor
+        numeric subtotal
+        numeric total_iva
+        numeric total
+        varchar usuario
+    }
+    DETALLE_INGRESO {
+        bigint id PK
+        bigint documento_ingreso_id FK
+        bigint producto_id FK
+        bigint unidad_medida_id FK
+        numeric cantidad
+        numeric factor_conversion
+        numeric cantidad_base
+        numeric costo_unitario
+        numeric porcentaje_iva
+        numeric total
+        bigint lote_id FK
+    }
+    FACTURA {
+        bigint id PK
+        varchar numero UK "FV-00000001"
+        bigint cliente_id FK
+        timestamptz fecha
+        int periodo "AAAAMM"
+        numeric subtotal
+        numeric total_descuento
+        numeric total_iva
+        numeric total
+        varchar origen "EN_LINEA | OFFLINE | API"
+        uuid id_local_offline UK
+        varchar usuario
+    }
+    DETALLE_FACTURA {
+        bigint id PK
+        bigint factura_id FK
+        bigint producto_id FK
+        bigint unidad_medida_id FK
+        numeric cantidad "entera o fraccion"
+        numeric factor_conversion
+        numeric cantidad_base
+        numeric precio_unitario
+        numeric porcentaje_descuento
+        numeric porcentaje_iva
+        numeric total
+        bigint reserva_id FK
+        int meses_garantia
+        date fecha_fin_garantia
+        varchar numero_serie
+    }
+    RESERVA {
+        bigint id PK
+        bigint cliente_id FK
+        bigint producto_id FK
+        numeric cantidad
+        numeric cantidad_pendiente
+        timestamptz fecha_expiracion
+        varchar estado "ACTIVA | CONSUMIDA | EXPIRADA | CANCELADA"
+        varchar usuario
+    }
+    MOVIMIENTO_INVENTARIO {
+        bigint id PK
+        varchar tipo "ENTRADA_COMPRA | SALIDA_VENTA | CAMBIO_ESTADO"
+        bigint producto_id FK
+        numeric cantidad "&gt; 0"
+        varchar estado_origen
+        varchar estado_destino
+        numeric costo_unitario
+        bigint documento_ingreso_id FK
+        bigint factura_id FK
+        bigint reserva_id FK
+        bigint lote_id FK
+        varchar motivo
+        varchar usuario
+        timestamptz fecha
+        int periodo "AAAAMM"
+    }
+    CIERRE_MENSUAL {
+        bigint id PK
+        int periodo UK "AAAAMM"
+        timestamptz fecha_ejecucion
+        varchar tipo_ejecucion "PROGRAMADO | MANUAL"
+        int operaciones_pendientes
+        numeric valor_inventario
+        varchar usuario
+    }
+    CIERRE_MENSUAL_DETALLE {
+        bigint id PK
+        bigint cierre_id FK
+        bigint producto_id FK
+        numeric inicial_disponible
+        numeric inicial_reservada
+        numeric inicial_danada
+        numeric compras
+        numeric ventas
+        numeric final_disponible
+        numeric final_reservada
+        numeric final_danada
+        numeric costo_promedio
+        numeric valor_inventario
+    }
+    SINCRONIZACION_OPERACION {
+        bigint id PK
+        uuid id_local UK
+        varchar dispositivo
+        timestamptz fecha_local
+        varchar estado "APLICADA | CONFLICTO | RESUELTA | DESCARTADA"
+        varchar mensaje
+        bigint factura_id FK
+        jsonb payload
+        varchar usuario
+    }
+    USUARIO {
+        bigint id PK
+        varchar username UK
+        varchar password_hash "BCrypt"
+        varchar nombre_completo
+        varchar correo UK
+        varchar idioma "es | en"
+        boolean activo
+        varchar api_key_hash UK "SHA-256"
+    }
+    ROL {
+        bigint id PK
+        varchar codigo UK "ROLE_ADMIN..."
+        varchar nombre
+    }
+    PERMISO {
+        bigint id PK
+        varchar codigo UK "PRODUCTO_LEER..."
+        varchar modulo
+    }
+    USUARIO_ROL {
+        bigint usuario_id PK, FK
+        bigint rol_id PK, FK
+    }
+    ROL_PERMISO {
+        bigint rol_id PK, FK
+        bigint permiso_id PK, FK
+    }
+    CONSECUTIVO {
+        varchar codigo PK "FACTURA | DOC_INGRESO"
+        varchar prefijo
+        bigint siguiente
+    }
+    AUDITORIA {
+        bigint id PK
+        varchar tabla
+        varchar operacion "INSERT | UPDATE | DELETE | ACCESO_DENEGADO..."
+        varchar registro_id
+        varchar usuario
+        timestamptz fecha
+        jsonb datos_anteriores
+        jsonb datos_nuevos
+    }
+</pre></div></section>
+<section id="despliegue"><div class="lamina">Lámina 2 · Despliegue</div><h2>Vista general</h2>
+<p>La SPA se sirve por Nginx con HTTPS, que también hace de proxy hacia el API. El punto de venta guarda catálogo y ventas pendientes en IndexedDB para seguir operando sin internet.</p>
+<div class="hoja"><pre class="mermaid">flowchart LR
+    subgraph Puesto["Puesto de bodega / mostrador"]
+        Lector["Lector de código de barras&lt;br/&gt;USB/Bluetooth HID"]
+        Impresora["Impresora&lt;br/&gt;Facturas y Documentos de Ingreso"]
+        subgraph Navegador["Navegador - SPA React + Material UI"]
+            UI["Pantallas&lt;br/&gt;Formik + Yup, i18n es/en"]
+            SW["Service Worker&lt;br/&gt;app disponible sin internet"]
+            IDB[("IndexedDB&lt;br/&gt;catálogo, clientes,&lt;br/&gt;ventas pendientes")]
+        end
+    end
+
+    Externo["Sistemas externos&lt;br/&gt;contabilidad, ERP"]
+
+    subgraph Servidor["Servidor - docker compose"]
+        Nginx["Nginx&lt;br/&gt;HTTPS TLS 1.2/1.3&lt;br/&gt;sirve la SPA y hace proxy de /api"]
+        API["Back-End Spring Boot 3&lt;br/&gt;API REST JSON /api/v1"]
+        Sched["Tareas programadas&lt;br/&gt;cierre mensual, expiración de reservas"]
+        DB[("PostgreSQL 16&lt;br/&gt;Flyway + triggers")]
+    end
+
+    Lector --&gt;|"teclado"| UI
+    UI --&gt;|"window.print"| Impresora
+    UI &lt;--&gt; IDB
+    SW -.-&gt; UI
+    UI --&gt;|"HTTPS + JWT"| Nginx
+    Externo --&gt;|"HTTPS + X-API-Key"| Nginx
+    Nginx --&gt;|"/api"| API
+    API --&gt;|"JPA / JDBC"| DB
+    Sched --&gt; API
+</pre></div></section>
+<section id="capas"><div class="lamina">Lámina 3 · Back-End</div><h2>Capas del Back-End</h2>
+<p>Seguridad por permisos en cada endpoint, servicios transaccionales con bloqueo de saldos y triggers en la base como segunda línea de defensa.</p>
+<div class="hoja"><pre class="mermaid">flowchart TB
+    Req(["Petición HTTP"]) --&gt; Filtros
+
+    subgraph Seguridad["Spring Security"]
+        Filtros["JwtAuthenticationFilter&lt;br/&gt;ApiKeyAuthenticationFilter"]
+        RBAC["@PreAuthorize por permiso&lt;br/&gt;RBAC: rol → permisos"]
+    end
+
+    subgraph Web["Controladores REST"]
+        C["Producto, Catalogo, Inventario, Reserva,&lt;br/&gt;Compra, Venta, Tercero, Cierre,&lt;br/&gt;Usuario, Auditoria, Migracion,&lt;br/&gt;Sincronizacion, Reporte"]
+        Err["GlobalExceptionHandler&lt;br/&gt;ApiError JSON i18n (400/401/403/404/409)"]
+    end
+
+    subgraph Servicios["Servicios de dominio - @Transactional"]
+        Prod["ProductoService&lt;br/&gt;PrecioService&lt;br/&gt;ConversionService"]
+        Inv["InventarioService&lt;br/&gt;SELECT ... FOR UPDATE&lt;br/&gt;FEFO por lote"]
+        Docs["CompraService → Documento de Ingreso&lt;br/&gt;VentaService → Factura&lt;br/&gt;ConsecutivoService"]
+        Otros["CierreService, ReservaService,&lt;br/&gt;SincronizacionService, MigracionExcelService"]
+    end
+
+    Aspecto["AuditoriaContextoAspect&lt;br/&gt;set_config('sigif.usuario')"]
+
+    subgraph Datos["Persistencia"]
+        Repo["Repositorios Spring Data JPA&lt;br/&gt;+ JdbcTemplate"]
+        PG[("PostgreSQL")]
+        Trg["Triggers: auditoría,&lt;br/&gt;periodo cerrado, inmutabilidad"]
+    end
+
+    Filtros --&gt; RBAC --&gt; C
+    C --&gt; Prod &amp; Inv &amp; Docs &amp; Otros
+    C -.-&gt; Err
+    Docs --&gt; Inv
+    Otros --&gt; Inv
+    Prod &amp; Inv &amp; Docs &amp; Otros --&gt; Repo
+    Aspecto -.-&gt; Repo
+    Repo --&gt; PG
+    PG --- Trg
+</pre></div></section>
+<section id="offline"><div class="lamina">Lámina 4 · Secuencia</div><h2>Venta sin internet y sincronización</h2>
+<p>Cada venta offline lleva un UUID: reenviarla no la duplica. Si al sincronizar ya no hay stock, queda en conflicto para revisión y nunca deja saldos negativos.</p>
+<div class="hoja"><pre class="mermaid">sequenceDiagram
+    actor Cajero
+    participant POS as Punto de venta (React)
+    participant IDB as IndexedDB
+    participant API as API /sincronizacion
+    participant DB as PostgreSQL
+
+    Note over POS,IDB: Al iniciar sesión se descarga el catálogo offline
+    Cajero-&gt;&gt;POS: Escanea productos y factura
+    alt Hay conexión
+        POS-&gt;&gt;API: POST /ventas
+        API-&gt;&gt;DB: Bloquea saldos, descuenta, crea factura FV-
+        API--&gt;&gt;POS: 201 Factura
+    else Sin conexión
+        POS-&gt;&gt;IDB: Guarda venta con idLocal (UUID)
+        POS--&gt;&gt;Cajero: Recibo local OFF-xxxx
+        Note over POS: Evento "online" o cada 60 s
+        POS-&gt;&gt;API: POST /sincronizacion/ventas
+        loop Cada venta, en orden de fecha local
+            API-&gt;&gt;DB: Aplica en su propia transacción
+            alt Hay stock
+                DB--&gt;&gt;API: Factura FV- (APLICADA)
+            else Stock insuficiente
+                DB--&gt;&gt;API: rollback (CONFLICTO, sin saldo negativo)
+            end
+        end
+        API--&gt;&gt;POS: Resultado por venta
+        POS-&gt;&gt;IDB: Borra las ventas procesadas
+    end
+</pre></div></section>
+</div>

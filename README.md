@@ -36,6 +36,9 @@ docs/               Decisiones de diseño (preguntas §11.4) y modelo de datos
 .github/workflows/  Pipeline CI/CD
 ```
 
+> **¿Primera vez?** Siga la guía paso a paso [docs/INICIO-RAPIDO.md](docs/INICIO-RAPIDO.md).
+> Diagramas: [modelo de datos](docs/MODELO-DATOS.md) y [arquitectura](docs/ARQUITECTURA.md).
+
 ## Ejecutar con Docker (recomendado)
 
 ```bash
