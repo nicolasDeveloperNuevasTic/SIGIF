@@ -30,6 +30,8 @@
         <springdoc.version>2.6.0</springdoc.version>
         <jjwt.version>0.12.6</jjwt.version>
         <poi.version>5.3.0</poi.version>
+        <!-- 1.21.4+ es compatible con Docker Engine 29 (API mínima 1.44) -->
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
     <dependencies>
