@@ -1,0 +1,29 @@
+/*
+ * Nombre: estilos.css
+ * Descripción: Estilos globales y reglas de impresión de Facturas y Documentos de Ingreso.
+ * Fecha de creación: 21/10/2026
+ * Última actualización: 21/10/2026
+ * Autor: Equipo SIGIF
+ */
+.documento-imprimible {
+  max-width: 820px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 24px;
+}
+
+@media print {
+  .no-imprimir {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .documento-imprimible {
+    padding: 0;
+    box-shadow: none !important;
+  }
+}

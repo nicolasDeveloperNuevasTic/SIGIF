@@ -1,0 +1,101 @@
+# =============================================================================
+# Nombre: application.yml
+# Descripción: Configuración principal del Back-End SIGIF.
+#              Los valores sensibles se inyectan por variables de entorno.
+# Fecha de creación: 21/10/2026
+# Última actualización: 21/10/2026
+# Autor: Equipo SIGIF
+# =============================================================================
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${SSL_KEYSTORE:}
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:}
+    key-store-type: PKCS12
+    enabled-protocols: TLSv1.2,TLSv1.3
+  error:
+    include-stacktrace: never
+
+spring:
+  application:
+    name: sigif-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sigif}
+    username: ${DB_USER:sigif}
+    password: ${DB_PASSWORD:sigif}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:30}
+      minimum-idle: 5
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+          time_zone: UTC
+        default_batch_fetch_size: 100
+        order_inserts: true
+        order_updates: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  jackson:
+    default-property-inclusion: always
+    serialization:
+      write-dates-as-timestamps: false
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+sigif:
+  zona-horaria: ${SIGIF_ZONA_HORARIA:America/Bogota}
+  seguridad:
+    jwt-secreto: ${JWT_SECRET:c2lnaWYtY2xhdmUtZGUtZGVzYXJyb2xsby1jYW1iaWFyLWVuLXByb2R1Y2Npb24tMzJieXRlcw==}
+    jwt-expiracion-minutos: ${JWT_EXPIRATION_MINUTES:480}
+    forzar-https: ${FORCE_HTTPS:false}
+    origenes-permitidos: ${CORS_ORIGINS:http://localhost:5173,https://localhost}
+  admin:
+    usuario: ${ADMIN_USERNAME:admin}
+    password: ${ADMIN_PASSWORD:Admin123*}
+    correo: ${ADMIN_EMAIL:admin@sigif.local}
+  semilla:
+    usuarios-demo: ${SEED_DEMO_USERS:true}
+  inventario:
+    decimales-maximos-venta: 3
+    escala-cantidad: 4
+  reservas:
+    dias-vigencia-defecto: ${RESERVA_DIAS:3}
+    cron-expiracion: "0 */15 * * * *"
+  cierre:
+    # Día 1 de cada mes a las 00:05 (hora de Bogotá) se cierra el mes anterior.
+    cron: ${CIERRE_CRON:0 5 0 1 * *}
+    habilitado: ${CIERRE_HABILITADO:true}
+
+logging:
+  level:
+    com.sigif: INFO

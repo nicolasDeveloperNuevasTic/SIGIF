@@ -1,0 +1,5 @@
+{
+  "source": { "include": ["src"], "includePattern": "\\.(js|jsx)$" },
+  "plugins": [],
+  "opts": { "destination": "docs-jsdoc", "recurse": true, "encoding": "utf8" }
+}

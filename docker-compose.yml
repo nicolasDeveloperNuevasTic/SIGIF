@@ -1,0 +1,52 @@
+# =============================================================================
+# Nombre: docker-compose.yml
+# Descripción: Entorno completo SIGIF: PostgreSQL 16, Back-End Spring Boot y Front-End
+#              React servido por Nginx con HTTPS (TLS 1.2/1.3).
+# Fecha de creación: 21/10/2026
+# Última actualización: 21/10/2026
+# Autor: Equipo SIGIF
+# =============================================================================
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sigif
+      POSTGRES_USER: ${DB_USER:-sigif}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sigif}
+      TZ: America/Bogota
+    ports:
+      - "5432:5432"
+    volumes:
+      - sigif-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sigif} -d sigif"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/sigif
+      DB_USER: ${DB_USER:-sigif}
+      DB_PASSWORD: ${DB_PASSWORD:-sigif}
+      JWT_SECRET: ${JWT_SECRET:-c2lnaWYtY2xhdmUtZGUtZGVzYXJyb2xsby1jYW1iaWFyLWVuLXByb2R1Y2Npb24tMzJieXRlcw==}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123*}
+      SEED_DEMO_USERS: ${SEED_DEMO_USERS:-true}
+      CORS_ORIGINS: https://localhost,http://localhost:5173
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+
+volumes:
+  sigif-db:

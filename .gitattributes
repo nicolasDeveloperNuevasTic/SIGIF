@@ -1,0 +1,4 @@
+# Nombre: .gitattributes | Descripción: Normaliza finales de línea a LF | Autor: Equipo SIGIF
+* text=auto eol=lf
+*.png binary
+*.xlsx binary
